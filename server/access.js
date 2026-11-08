@@ -1,4 +1,5 @@
 // Server-only authentication. No password or verifier is included in client assets.
+import {verifyPassword,validatePepper} from './password.js';
 const encoder = new TextEncoder();
 const COOKIE = '__Host-footage_session';
 const LIFETIME = 8 * 60 * 60;
@@ -20,7 +21,8 @@ function login(message='', status=200, headers={}) {
 }
 async function sessionKey(env) {
   if (typeof env.ACCESS_SESSION_SECRET!=='string' || env.ACCESS_SESSION_SECRET.length<43) throw new Error('Missing session configuration');
-  return crypto.subtle.importKey('raw',encoder.encode(env.ACCESS_SESSION_SECRET+env.ACCESS_PASSWORD_HASH),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);
+  validatePepper(env.ACCESS_PASSWORD_PEPPER);
+  return crypto.subtle.importKey('raw',encoder.encode(env.ACCESS_SESSION_SECRET+env.ACCESS_PASSWORD_HASH+env.ACCESS_PASSWORD_PEPPER),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);
 }
 export async function makeSession(env, now=Date.now()) {
   const payload=encode(encoder.encode(JSON.stringify([Math.floor(now/1000)+LIFETIME,encode(crypto.getRandomValues(new Uint8Array(16)))])));
@@ -41,16 +43,6 @@ async function authenticated(request,env,now) {
     return Number.isInteger(expires)&&expires>seconds&&expires<=seconds+LIFETIME&&typeof nonce==='string'&&nonce.length===22;
   }catch{return false;}
 }
-async function validPassword(password, verifier) {
-  const config=JSON.parse(verifier);
-  if(config.iterations!==100000 || decode(config.salt).length!==16 || decode(config.hash).length!==32)throw new Error('Invalid verifier');
-  const key=await crypto.subtle.importKey('raw',encoder.encode(password),'PBKDF2',false,['deriveBits']);
-  const calculated=new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',iterations:config.iterations,salt:decode(config.salt)},key,256));
-  // A fixed-length comparison; the verifier is never returned to the browser.
-  const expected=decode(config.hash);let difference=0;
-  for(let i=0;i<32;i++)difference|=calculated[i]^expected[i];
-  return difference===0;
-}
 async function reserve(db,key,now) {
   return db.prepare('INSERT INTO access_attempts (key, started, attempts) VALUES (?, ?, 1) ON CONFLICT(key) DO UPDATE SET attempts = CASE WHEN started <= ? THEN 1 ELSE attempts + 1 END, started = CASE WHEN started <= ? THEN excluded.started ELSE started END RETURNING attempts, started').bind(key,now,now-WINDOW,now-WINDOW).first();
 }
@@ -64,6 +56,7 @@ async function boundedBody(request) {
   return fields.getAll('password').length===1?fields.get('password'):null;
 }
 export function createApp(serveAsset) {
+  let verifying=false;
   return {async fetch(request,env,ctx={waitUntil(){}}) {
     const url=new URL(request.url);
     if(url.protocol!=='https:'){url.protocol='https:';return response(null,308,{Location:url.href});}
@@ -85,7 +78,11 @@ export function createApp(serveAsset) {
         const attempt=await reserve(env.DB,ipKey,now);
         ctx.waitUntil(env.DB.prepare('DELETE FROM access_attempts WHERE started < ?').bind(now-WINDOW*2).run().catch(()=>{}));
         if(attempt.attempts>5)return login('Trop de tentatives. Réessayez dans quinze minutes.',429,{'Retry-After':String(Math.max(1,attempt.started+WINDOW-now))});
-        if(!await validPassword(password,env.ACCESS_PASSWORD_HASH))return login('Mot de passe incorrect.',401);
+        // One memory-hard derivation per isolate prevents parallel logins exhausting RAM.
+        if(verifying)return login('Une connexion est déjà en cours. Réessayez dans quelques secondes.',503,{'Retry-After':'2'});
+        let matches;verifying=true;
+        try{matches=await verifyPassword(password,env.ACCESS_PASSWORD_HASH,env.ACCESS_PASSWORD_PEPPER);}finally{verifying=false;}
+        if(!matches)return login('Mot de passe incorrect.',401);
         await env.DB.prepare('DELETE FROM access_attempts WHERE key = ?').bind(ipKey).run();
         return response(null,303,{Location:'/', 'Set-Cookie':`${COOKIE}=${await makeSession(env)}; Path=/; Max-Age=${LIFETIME}; HttpOnly; Secure; SameSite=Strict`});
       }

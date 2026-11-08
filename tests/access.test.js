@@ -3,17 +3,16 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {createApp,makeSession} from '../server/access.js';
+import {createPasswordVerifier} from '../server/password.js';
 
 const password='test-only-long-password';
 const bytes=value=>Buffer.from(value).toString('base64url');
-const salt=crypto.getRandomValues(new Uint8Array(16));
-const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
-const hash=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},key,256);
-const verifier=JSON.stringify({iterations:100000,salt:bytes(salt),hash:bytes(hash)});
+const pepper=bytes(crypto.getRandomValues(new Uint8Array(32)));
+const verifier=await createPasswordVerifier(password,pepper);
 function setup(){
   const db=new DatabaseSync(':memory:');db.exec(readFileSync(new URL('../drizzle/0000_loving_joshua_kane.sql',import.meta.url),'utf8'));
   const DB={prepare(sql){return {bind(...args){return {async first(){return db.prepare(sql).get(...args);},async run(){return db.prepare(sql).run(...args);}};}};}};
-  const env={DB,ACCESS_PASSWORD_HASH:verifier,ACCESS_SESSION_SECRET:bytes(crypto.getRandomValues(new Uint8Array(32)))};
+  const env={DB,ACCESS_PASSWORD_HASH:verifier,ACCESS_PASSWORD_PEPPER:pepper,ACCESS_SESSION_SECRET:bytes(crypto.getRandomValues(new Uint8Array(32)))};
   let served=0;
   const app=createApp(async()=>{served++;return new Response('private-asset',{headers:{'Content-Type':'text/javascript'}});});
   return {env,db,app,get served(){return served;}};
@@ -81,6 +80,13 @@ test('limites persistantes et atomiques par adresse, limite globale et reprise a
 });
 test('configuration et stockage indisponibles : aucun accès à l’application',async()=>{
   const s=setup();
-  for(const env of [{},{...s.env,DB:null},{...s.env,ACCESS_SESSION_SECRET:'short'}])assert.equal((await s.app.fetch(get(),env)).status,503);
+  for(const env of [{},{...s.env,DB:null},{...s.env,ACCESS_SESSION_SECRET:'short'},{...s.env,ACCESS_PASSWORD_PEPPER:undefined},{...s.env,ACCESS_PASSWORD_PEPPER:'invalid'}])assert.equal((await s.app.fetch(get(),env)).status,503);
   const broken={...s.env,DB:{prepare(){throw Error('offline');}}};assert.equal((await s.app.fetch(post('/auth/login'),broken)).status,503);assert.equal(s.served,0);s.db.close();
+});
+
+test('les connexions parallèles respectent le budget mémoire de l’isolate',async()=>{
+  const s=setup();
+  const results=await Promise.all([s.app.fetch(post('/auth/login'),s.env),s.app.fetch(post('/auth/login'),s.env)]);
+  assert.deepEqual(results.map(result=>result.status).sort(),[303,503]);
+  assert.equal(results.find(result=>result.status===503).headers.get('Retry-After'),'2');s.db.close();
 });

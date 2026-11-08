@@ -19,7 +19,7 @@ for(const relative of await readdir('.protected-client',{recursive:true})) {
   assets['/'+relative.replaceAll('\\','/')]=[type,compressed.toString('base64')];
 }
 await mkdir('dist/server',{recursive:true});await mkdir('dist/.openai',{recursive:true});
-await cp('server/access.js','dist/server/access.js');
+await build({configFile:false,publicDir:false,logLevel:'warn',build:{outDir:'dist/server',emptyOutDir:false,lib:{entry:'server/access.js',formats:['es'],fileName:()=> 'access.js'},minify:true,sourcemap:false}});
 await writeFile('dist/server/index.js',`import {createApp} from './access.js';\nconst assets=${JSON.stringify(assets)};\nexport default createApp(async request=>{const path=new URL(request.url).pathname;const entry=assets[path==='/'?'/index.html':path];if(!entry)return new Response('Introuvable',{status:404});const bytes=Uint8Array.from(atob(entry[1]),c=>c.charCodeAt(0));const headers={'Content-Type':entry[0]};return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')),{headers});});\n`);
 const hosting=JSON.parse(await readFile('.openai/hosting.json','utf8'));
 if(hosting.static)throw new Error('Protected deployments must not use static hosting');

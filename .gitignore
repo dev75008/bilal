@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.openai/
+.taste-skill/
+graphify-out/
+*.zip
+*.tar.gz
+.env
+.env.*
+!.env.example

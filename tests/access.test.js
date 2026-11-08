@@ -21,6 +21,23 @@ function setup(){
 const get=(path='/',cookie)=>new Request('https://atelier.test'+path,{headers:cookie?{Cookie:cookie}:{}});
 const post=(path,value=password,origin='https://atelier.test',ip='192.0.2.1')=>new Request('https://atelier.test'+path,{method:'POST',headers:{Origin:origin,'Content-Type':'application/x-www-form-urlencoded','CF-Connecting-IP':ip},body:new URLSearchParams({password:value})});
 
+test('le formulaire natif préserve son origine et permet la connexion',async()=>{
+  const s=setup();
+  const page=await s.app.fetch(get(),s.env);
+  // Fetch's append-a-request-origin-header algorithm serializes Origin as null
+  // for a native POST navigation under no-referrer. Same-origin preserves it.
+  const policy=page.headers.get('Referrer-Policy');
+  const formOrigin=policy==='no-referrer'?'null':'https://atelier.test';
+  const submitted=await s.app.fetch(post('/auth/login',password,formOrigin),s.env);
+  assert.equal(submitted.status,303,'La politique de la page ne doit pas bloquer son propre formulaire');
+  assert.equal(policy,'same-origin');
+  const cookie=submitted.headers.get('Set-Cookie').split(';')[0];
+  assert.equal((await s.app.fetch(get('/auth/login',cookie),s.env)).status,303);
+  assert.equal((await s.app.fetch(get('/auth/login',cookie),s.env)).headers.get('Location'),'/');
+  assert.equal((await s.app.fetch(post('/auth/login',password,'null'),s.env)).status,403);
+  s.db.close();
+});
+
 test('le serveur bloque HTML et accès directs aux images et scripts sans cookie',async()=>{
   const s=setup();
   for(const path of ['/','/index.html','/assets/app.js','/images/catalog.png','/favicon.svg']){

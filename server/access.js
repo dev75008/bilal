@@ -7,7 +7,8 @@ const encode = bytes => btoa(String.fromCharCode(...bytes)).replaceAll('+','-').
 const decode = value => Uint8Array.from(atob(value.replaceAll('-','+').replaceAll('_','/')), character => character.charCodeAt(0));
 const security = {
   'Cache-Control':'private, no-store', 'X-Content-Type-Options':'nosniff',
-  'Referrer-Policy':'no-referrer', 'X-Frame-Options':'DENY',
+  // Preserve Origin on native same-site form POSTs; disclose no referrer off-site.
+  'Referrer-Policy':'same-origin', 'X-Frame-Options':'DENY',
   'Strict-Transport-Security':'max-age=31536000', 'X-Robots-Tag':'noindex, nofollow',
   'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
 };
@@ -71,7 +72,8 @@ export function createApp(serveAsset) {
       await sessionKey(env);
       const now=Math.floor(Date.now()/1000);
       if(url.pathname==='/auth/login' || url.pathname==='/auth/logout') {
-        if(request.method!=='POST')return request.method==='GET'&&url.pathname==='/auth/login'?login():response('Méthode non autorisée',405,{Allow:'POST'});
+        if(request.method==='GET'&&url.pathname==='/auth/login')return await authenticated(request,env,Date.now())?response(null,303,{Location:'/'}):login();
+        if(request.method!=='POST')return response('Méthode non autorisée',405,{Allow:'POST'});
         if(request.headers.get('Origin')!==url.origin || request.headers.get('Sec-Fetch-Site')==='cross-site')return response('Requête refusée',403);
         if(url.pathname==='/auth/logout')return response(null,303,{Location:'/', 'Set-Cookie':`${COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`});
         const password=await boundedBody(request);

@@ -27,16 +27,14 @@ jobs:
         run: npm ci
       - name: Vérifier les fonctions et le parcours React
         run: npm test
-      - name: Vérifier la compilation React
-        run: npm run build
-      - name: Préparer la transition vers le service protégé
+      - name: Compiler l’application complète pour GitHub Pages
         run: npm run build:pages
       - name: Configurer GitHub Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - name: Préparer les fichiers à publier
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
-          path: pages
+          path: dist
 
   deploy:
     needs: build

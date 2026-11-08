@@ -3,20 +3,8 @@ import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js'
 import {buildFurnitureParts} from './furniture-models.js';
 import {catalogById,sectionColor} from './domain.js';
 import {createVisitMaterials,materialForPart} from './visit-materials.js';
-
-function shirtGeometry() {
-  const shape=new THREE.Shape();
-  shape.moveTo(-.13,.32);shape.quadraticCurveTo(-.24,.31,-.32,.16);shape.lineTo(-.23,.08);shape.lineTo(-.17,.16);shape.lineTo(-.18,-.31);
-  shape.quadraticCurveTo(0,-.34,.18,-.31);shape.lineTo(.17,.16);shape.lineTo(.23,.08);shape.lineTo(.32,.16);shape.quadraticCurveTo(.24,.31,.13,.32);
-  shape.quadraticCurveTo(0,.2,-.13,.32);
-  const geometry=new THREE.ExtrudeGeometry(shape,{depth:.025,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.012,bevelThickness:.012,curveSegments:6});
-  const position=geometry.attributes.position;
-  for(let index=0;index<position.count;index++){
-    const x=position.getX(index),y=position.getY(index);
-    position.setZ(index,position.getZ(index)+Math.sin(x*49)*.009*(.35-y)+Math.sin(y*14+x*9)*.004);
-  }
-  position.needsUpdate=true;geometry.computeVertexNormals();return geometry;
-}
+import {createProductModels} from './visit-product-models.js';
+import {productDisplay} from './visit-product-layout.js';
 
 function label(text,color,width=512,height=128) {
   if(typeof document==='undefined')return null;
@@ -33,11 +21,12 @@ export function createVisitScene(project) {
   const resources=createVisitMaterials(project.width,project.depth),{materials}=resources;
   const geometries=new Set(),extraMaterials=new Set(),extraTextures=new Set(),batches=new Map(),transform=new THREE.Object3D();
   const keep=geometry=>{geometries.add(geometry);return geometry;};
-  const box=keep(new THREE.BoxGeometry(1,1,1)),rounded=keep(new RoundedBoxGeometry(1,1,1,2,.055)),tube=keep(new THREE.CylinderGeometry(.5,.5,1,12)),shirts=keep(shirtGeometry());
+  const box=keep(new THREE.BoxGeometry(1,1,1)),rounded=keep(new RoundedBoxGeometry(1,1,1,2,.055)),tube=keep(new THREE.CylinderGeometry(.5,.5,1,12));
   const ceilingHeight=Math.max(3.5,...project.items.map(item=>item.h+.8));
-  const instance=(geometry,material,position,scale,rotation=new THREE.Euler(),dressing=false)=>{
-    const key=geometry.uuid+material.uuid+(dressing?'d':'f');
-    if(!batches.has(key))batches.set(key,{geometry,material,matrices:[],dressing});
+  const instance=(geometry,material,position,scale,rotation=new THREE.Euler(),dressing=false,product=null)=>{
+    const key=geometry.uuid+material.uuid+(dressing?'d':'f')+(product?product.type+product.audience:'');
+    if(!batches.has(key))batches.set(key,{geometry,material,matrices:[],dressing,product,sections:new Set()});
+    if(product)batches.get(key).sections.add(product.section);
     transform.position.copy(position);transform.scale.copy(scale);transform.rotation.copy(rotation);transform.updateMatrix();batches.get(key).matrices.push(transform.matrix.clone());
   };
   const addBox=(w,h,d,x,y,z,material,{shadow=true,name=''}={})=>{
@@ -75,12 +64,13 @@ export function createVisitScene(project) {
     const light=new THREE.RectAreaLight('#fff8eb',5,Math.max(2,project.width*.4),Math.max(2,project.depth*.4));light.position.set(x,ceilingHeight-.16,z);light.lookAt(x,0,z);scene.add(light);
   }
   const dressingGroup=new THREE.Group();dressingGroup.name='Articles de démonstration';scene.add(dressingGroup);
-  const apparel=['#273c59','#d8c9b6','#ece7db','#a98075','#44544c','#918a7d'];
+  const modelFor=createProductModels(keep,rounded,tube,materials);
   const furnitureRoot=new THREE.Group();furnitureRoot.name='Mobilier du plan';scene.add(furnitureRoot);
   for(const [itemIndex,item] of project.items.entries()){
     const def=catalogById[item.type],angle=item.r*Math.PI/180;
     const world=(x,y,z)=>new THREE.Vector3(item.x+x*Math.cos(angle)-z*Math.sin(angle),y,item.z+x*Math.sin(angle)+z*Math.cos(angle));
-    for(const part of buildFurnitureParts(item,def)){
+    const fixtureParts=buildFurnitureParts(item,def);
+    for(const part of fixtureParts){
       const material=materialForPart(part,materials);let geometry=rounded,scale,rotation=new THREE.Euler(0,-angle,0);
       if(part.cylinder){
         const topRatio=part.r>0?part.topRadius/part.r:1;
@@ -99,21 +89,15 @@ export function createVisitScene(project) {
       }
       instance(geometry,material,world(part.x,part.y+part.h/2,part.z),scale,rotation);
     }
-    if(['rail','singleRail','doubleRail','fourArm','wardrobe','featureRail','denimRail','wallRail','wallMixed'].includes(def.family)&&item.h>.9){
-      const count=Math.min(12,Math.max(3,Math.floor(item.l/.15)));
-      for(let index=0;index<count;index++){
-        const x=-item.l*.34+index*item.l*.68/Math.max(1,count-1),color=apparel[(itemIndex+Math.floor(index/3))%apparel.length];
-        const railHeight=item.h*(def.family==='rail'?.9:.84),height=Math.min(.66,item.h*.48),scale=height/.64;
-        instance(shirts,materials.fabric(color),world(x,railHeight-height*.5-.09,0),new THREE.Vector3(scale*.85,scale,scale),new THREE.Euler(0,-angle+Math.PI/2,0),true);
-        // Indicative hangers sit below the rail; they do not change the fixture or its footage.
-        const hanger=new THREE.Vector3(.22,.007,.007);
-        instance(rounded,materials.wood,world(x,railHeight-.06,0),hanger,new THREE.Euler(0,-angle+Math.PI/2,0),true);
-      }
-    }else if(['table','woodTable','goalTable','denimTable','shelf','darkShelf','featureShelf','cubbyTable','stepTable','shoeTable','denimShelf'].includes(def.family)){
-      const cols=Math.min(3,Math.max(1,Math.floor(item.l/.42))),layers=Math.min(2,Math.max(1,Math.floor(item.h/.6)));
-      for(let level=0;level<layers;level++)for(let column=0;column<cols;column++)for(let stack=0;stack<3;stack++){
-        const x=(column-(cols-1)/2)*Math.min(.45,item.l*.65/cols),top=item.h*(level===0?.94:.49),color=apparel[(itemIndex+column+stack)%apparel.length];
-        instance(rounded,materials.fabric(color),world(x,top+.035+stack*.031,0),new THREE.Vector3(Math.min(.34,item.l*.75),.028,Math.min(.3,item.d*.7)),new THREE.Euler(0,-angle+(stack-1)*.015,0),true);
+    const display=productDisplay(project,item,def,fixtureParts,modelFor,itemIndex);
+    for(const support of display.supports)instance(rounded,materials.white,world(support.x,support.y,support.z),new THREE.Vector3(support.w,support.h,support.d),new THREE.Euler(0,-angle,0),true);
+    for(const placement of display.placements){
+      const rotation=new THREE.Quaternion().setFromEuler(new THREE.Euler(placement.rx,placement.ry,0));
+      const itemRotation=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-angle);
+      for(const part of placement.model.parts){
+        const offset=new THREE.Vector3(part.x,part.y,part.z).multiplyScalar(placement.scale).applyQuaternion(rotation);
+        const orientation=itemRotation.clone().multiply(rotation).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(part.rx,part.ry,part.rz)));
+        instance(part.geometry,part.material,world(placement.x+offset.x,placement.y+offset.y,placement.z+offset.z),new THREE.Vector3(part.sx,part.sy,part.sz).multiplyScalar(placement.scale),new THREE.Euler().setFromQuaternion(orientation),true,placement.profile);
       }
     }
     // shortcut: cap label textures at 50 to bound memory; use an atlas if large plans need every label.
@@ -125,7 +109,8 @@ export function createVisitScene(project) {
   for(const batch of batches.values()){
     if(!batch.matrices?.length)continue;
     const mesh=new THREE.InstancedMesh(batch.geometry,batch.material,batch.matrices.length);batch.matrices.forEach((matrix,index)=>mesh.setMatrixAt(index,matrix));mesh.instanceMatrix.needsUpdate=true;
-    mesh.castShadow=batch.material!==materials.glass;mesh.receiveShadow=true;mesh.computeBoundingSphere();mesh.name=batch.dressing?'Articles indicatifs':'Éléments de mobilier';
+    mesh.castShadow=batch.material!==materials.glass;mesh.receiveShadow=true;mesh.computeBoundingSphere();mesh.name=batch.product?'Articles indicatifs — '+batch.product.type:batch.dressing?'Supports de présentation':'Éléments de mobilier';
+    if(batch.product)mesh.userData={productType:batch.product.type,audience:batch.product.audience,sections:[...batch.sections]};
     (batch.dressing?dressingGroup:furnitureRoot).add(mesh);
   }
   const brandMap=label('PRIMARK   /   '+project.name,'#007c9e',1024,128);

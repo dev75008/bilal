@@ -1,6 +1,6 @@
 ---
 version: alpha
-name: Atelier Footage — Primark affirmé
+name: Atelier Footage — Primark essentiel
 description: Charte d’une application d’implantation commerciale en 2D et 3D.
 colors:
   primary: "#00B6D1"
@@ -9,7 +9,7 @@ colors:
   primary-container: "#D9F7FA"
   secondary: "#152D35"
   on-secondary: "#FFFFFF"
-  background: "#F1F6F6"
+  background: "#F5F5F7"
   surface: "#FFFFFF"
   on-surface: "#152D35"
   on-surface-variant: "#52666C"
@@ -64,7 +64,7 @@ typography:
     lineHeight: 1.6
   display-preview:
     fontFamily: IBM Plex Sans
-    fontSize: 28px
+    fontSize: 30px
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: -0.025em
@@ -129,19 +129,19 @@ components:
 
 ## Intention
 
-L’identité s’appuie sur le cyan déjà associé à Primark. Sa présence est renforcée sur l’accueil et l’action principale. Les surfaces de travail restent blanches pour laisser lire les plans, les modèles de mobilier et leurs sections colorées.
+L’identité s’appuie sur le cyan déjà associé à Primark. Il souligne les actions principales et les états de sélection. Les surfaces de travail restent blanches pour laisser lire les plans, les modèles de mobilier et leurs sections colorées.
 
-La direction « Framed sheet » issue de Design Taste sert de structure : un cadre clair entoure une feuille de travail blanche, avec une profondeur obtenue par les différences de fond. La demande d’une charte plus affirmée justifie un champ cyan plus présent sur la démonstration de l’accueil. Le tirage local porte la graine 1485887699.
+L’accueil adopte la sobriété demandée à partir du site Apple : une introduction espacée, un aperçu du plan mis en valeur et des surfaces blanches. Les outils d’édition restent plus compacts pour préserver la place du plan.
 
 ## Couleurs
 
 | Usage | Couleur | Application |
 | --- | --- | --- |
-| Cyan | `#00B6D1` | Action principale et zone de découverte |
-| Encre | `#152D35` | Titres, texte et bouton de démonstration |
-| Texte sur cyan | `#073642` | Texte et chiffres du panneau cyan |
+| Cyan | `#00B6D1` | Actions principales |
+| Encre | `#152D35` | Titres et texte |
+| Texte sur cyan | `#073642` | Libellés des boutons cyan |
 | Blanc | `#FFFFFF` | Feuille de travail, formulaires et cartes |
-| Cadre clair | `#F1F6F6` | Navigation et fond de page |
+| Cadre clair | `#F5F5F7` | Navigation et fond de page |
 | Texte secondaire | `#52666C` | Descriptions, unités et aide |
 
 Le texte clair est réservé aux fonds suffisamment foncés. Les boutons cyan portent un texte sombre. Les couleurs des sections conservent leur rôle de données : elles ne sont pas réaffectées à la décoration de l’interface.
@@ -150,7 +150,7 @@ Le texte clair est réservé aux fonds suffisamment foncés. Les boutons cyan po
 
 IBM Plex Sans est chargée depuis les fichiers du site, en graisses variables. Les titres restent compacts, les paragraphes lisibles et les chiffres comparables alignés avec des chiffres tabulaires. Le nom Primark garde sa casse de marque ; les libellés de l’application restent en casse de phrase.
 
-Les textes courants utilisent 14 px. Les métadonnées utilisent 12 px. Les titres de page atteignent 30 px sur ordinateur et 28 px sur petit écran. Les champs de saisie passent à 16 px sur mobile pour éviter le zoom automatique de certains navigateurs.
+Les textes courants utilisent 14 px. Les métadonnées utilisent 12 px. Les titres de page atteignent 40 px sur l’accueil et 30 px sur petit écran. Les champs de saisie passent à 16 px sur mobile pour éviter le zoom automatique de certains navigateurs.
 
 ## Mise en page
 
@@ -175,3 +175,9 @@ Les actions au clavier restent immédiates. Le réglage système de mouvements r
 ## Vérification
 
 Les tests vérifient les parcours React, l’aide, la protection des raccourcis pendant une fenêtre d’aide et les paires principales de couleurs définies dans les styles. Les calculs portent sur les jetons, sans constituer un audit visuel d’accessibilité. Aucun contrôle rendu, capture d’écran ou test sur téléphone n’a pu être réalisé dans cet environnement.
+
+## Évolution : sobriété Apple, couleur Primark
+
+Références : https://www.apple.com/fr/ et https://www.primark.com/fr-fr. L’accueil privilégie les surfaces blanches, une introduction courte, l’espace entre les blocs et un véritable aperçu du plan. Le cyan Primark reste la couleur des actions principales. Pas de copie de visuels ni de police propriétaire Apple. L’éditeur conserve une densité adaptée au travail.
+
+La page d’accès reprend cette palette. Le mot de passe et son empreinte restent exclusivement dans les secrets du serveur.

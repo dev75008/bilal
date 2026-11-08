@@ -1,14 +1,14 @@
 # Atelier Footage — React
 
-Application React autonome pour concevoir des implantations commerciales, placer des mobiliers en 2D/3D et calculer le footage par section. La version déployée est publique et ne demande aucun compte. Le code ne dépend d’aucune API OpenAI ni d’un serveur applicatif.
+Application React autonome pour concevoir des implantations commerciales, placer des mobiliers en 2D/3D et calculer le footage par section. La version en ligne est protégée par un mot de passe vérifié côté serveur et ne demande aucun compte ChatGPT. Le code ne dépend d’aucune API OpenAI.
 
-**Application : [dev75008.github.io/bilal](https://dev75008.github.io/bilal/)**
+**Application protégée : [Atelier Footage](https://atelier-footage-primark.knitmouse1.chatgpt.site/)**
 
 La charte graphique est documentée dans [DESIGN.md](DESIGN.md) : palette cyan et anthracite, IBM Plex Sans hébergée localement, composants et états, navigation et règles de mouvement. [PRODUCT.md](PRODUCT.md) décrit les usages et les contraintes conservées.
 
 ## Publication sur GitHub Pages
 
-Chaque mise à jour de la branche `main` lance le workflow `.github/workflows/pages.yml` : installation des dépendances, tests, compilation React puis publication du dossier `dist/`. Le déploiement peut aussi être relancé depuis l’onglet Actions.
+Chaque mise à jour de la branche `main` lance le workflow `.github/workflows/pages.yml` : installation des dépendances, tests, puis publication de la page de transition `pages/`. Le déploiement peut aussi être relancé depuis l’onglet Actions.
 
 La configuration Vite utilise des adresses relatives pour que le site fonctionne sous `/bilal/` comme à la racine d’un autre hébergement. Dans les paramètres du dépôt, la source de GitHub Pages doit être « GitHub Actions ».
 
@@ -31,7 +31,7 @@ npm run build
 npm run preview
 ```
 
-Le dossier `dist/` contient le site complet, prêt à être servi par un hébergeur statique HTTPS. Déposez son contenu à la racine de votre site. Le navigateur télécharge le JavaScript React compilé ; aucune installation n’est nécessaire pour les utilisateurs. Les sources du catalogue et les illustrations sont incluses, sans chargement depuis un CDN.
+`npm run build` produit une version statique pour le développement. Elle ne possède aucune protection serveur et ne doit pas être publiée comme service protégé. `npm run build:protected` produit le Worker sécurisé ; `.openai/hosting.json` doit déclarer `d1: "DB"` et ne doit contenir aucune clé `static`. Le navigateur télécharge le JavaScript React compilé ; aucune installation n’est nécessaire pour les utilisateurs. Les sources du catalogue et les illustrations sont incluses, sans chargement depuis un CDN.
 
 ## Fonctions
 
@@ -80,3 +80,13 @@ Le moteur 3D est chargé seulement à l’ouverture de la visite. La scène part
 Les tests couvrent les calculs, les parcours React en DOM simulé, les géométries Three.js, les collisions, le cycle de vie avec un moteur graphique simulé et la bascule de secours. La compilation a été vérifiée. Aucun test visuel réel ni mesure de fluidité sur navigateur ou téléphone n’a été possible dans cet environnement.
 
 Les données locales ne sont pas supprimées par la migration React. Les exports JSON de la version précédente restent importables.
+
+## Accès privé côté serveur
+
+Le service Sites utilise `server/access.js`. Toutes les routes et tous les assets passent par le contrôle de session. Les ressources compilées sont intégrées au Worker : aucun répertoire statique public ne permet de contourner le contrôle. Les copies livrées des PNG sont compressées en WebP ; les originaux restent conservés dans `public/`.
+
+Les secrets `ACCESS_PASSWORD_HASH` (JSON : sel aléatoire de 16 octets et empreinte de 32 octets encodés en base64url, PBKDF2-SHA256, 100000 itérations) et `ACCESS_SESSION_SECRET` (32 octets aléatoires encodés en base64url) sont configurés exclusivement dans les variables secrètes de production. Aucun mot de passe ni vérificateur réel ne doit être commité ou injecté dans Vite. Le serveur refuse de fonctionner si sa configuration manque. Changer un de ces secrets invalide les sessions existantes.
+
+La session signée expire après huit heures. Cookie `__Host-`, `Secure`, `HttpOnly`, `SameSite=Strict`, réponses privées non mises en cache, contrôle d’origine sur les formulaires et HTTPS obligatoire. Les tentatives sont comptées atomiquement dans D1 : cinq par adresse et trente au total par fenêtre de quinze minutes. Le serveur ne conserve pas les adresses IP brutes. Les migrations SQL et leur journal se trouvent dans `drizzle/` et sont appliqués par Sites avant le déploiement. Le schéma source est dans `server/schema.js` ; pour le faire évoluer, générer une nouvelle migration avec Drizzle Kit compatible, sans modifier une migration déjà appliquée.
+
+GitHub Pages sert uniquement une transition vers le service protégé. Cette transition propose un téléchargement local des anciens projets avant le changement d’origine ; les imports restent disponibles dans l’application. Les sources GitHub restent publiques, les secrets de production restent séparés.

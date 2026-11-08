@@ -2,7 +2,7 @@
 
 Atelier Footage permet de préparer des implantations commerciales à partir du catalogue de mobilier fourni. L’utilisateur crée une session, choisit un département et des sections, place les meubles, vérifie le footage et parcourt une visite 3D.
 
-Le produit conserve l’identité Primark déjà présente dans le code. La refonte demandée donne davantage de présence au cyan, clarifie les commandes et harmonise les écrans. La direction retenue par défaut est « Primark affirmé » ; aucune préférence esthétique supplémentaire n’a été reçue pendant cette intervention.
+Le produit conserve les couleurs Primark et adopte, à la demande de l’utilisateur, une sobriété inspirée du site Apple : surfaces blanches, espace, hiérarchie nette et actions limitées. Le service en ligne exige un mot de passe vérifié côté serveur, sans compte ChatGPT.
 
 L’accueil doit permettre de créer ou reprendre une session sans recherche dans les menus. L’éditeur donne la priorité au plan et aux réglages du meuble sélectionné. Les commandes secondaires et destructives restent accessibles dans les options de session. La visite immersive conserve les produits adaptés aux sections D6, D7 et aux autres départements.
 

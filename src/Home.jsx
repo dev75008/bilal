@@ -6,7 +6,7 @@ import {Icon} from './Icon.jsx';
 export function Home({documents,saved,projects,recent,drafts,query,sort,onQuery,onSort,onNew,onDemo,onOpen}) {
   const [demo]=useState(createDemo),demoTotal=round(demo.items.reduce((sum,item)=>sum+feet(item),0));
   return <main className={'home'+(saved.length?' has-projects':'')} id="main-content" tabIndex={-1}>
-    <div className="home-heading"><div><h1>Votre atelier d’implantation</h1><p>Vos départements, vos mobiliers, votre prochain plan.</p></div><div className="home-actions">
+    <div className="home-heading"><div><h1>Votre atelier.<br/>Prenez du recul.</h1><p>Imaginez votre implantation. Ajustez chaque détail. Visitez-la en 3D.</p></div><div className="home-actions">
       <button className="primary home-action" onClick={onNew}><Icon name="plus"/><span className="action-copy">Nouvelle session<small>Partir d’un département vide</small></span></button>
       <button className="home-action" disabled={!recent} onClick={()=>recent&&onOpen(documents.find(doc=>doc.id===recent.id)||recent)}><Icon name="folder"/><span className="action-copy">Continuer<small>{recent?.name||'Aucune session enregistrée'}</small></span></button>
     </div></div>

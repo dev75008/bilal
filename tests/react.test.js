@@ -11,7 +11,7 @@ test('parcours React : démo, modification, annulation, sauvegarde et rechargeme
   globalThis.IS_REACT_ACT_ENVIRONMENT=true;globalThis.devicePixelRatio=1;globalThis.ResizeObserver=class{observe(){}disconnect(){}};
   dom.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};dom.window.HTMLDialogElement.prototype.close=function(){this.open=false;};
   dom.window.HTMLCanvasElement.prototype.getContext=()=>new Proxy({},{get:()=>()=>{}});
-  const server=await createServer({server:{middlewareMode:true},appType:'custom'});
+  const server=await createServer({server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
   let root;
   try {
     const {default:App}=await server.ssrLoadModule('/src/App.jsx');root=createRoot(document.getElementById('root'));

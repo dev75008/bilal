@@ -1,5 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {randomFillSync} from 'node:crypto';
 import {catalog,catalogById,departments,newProject,createDemo,validDoc,feet,totals,sectionOptions,sectionColor,placeItem,parseImport,readProjects,isDirty,normalize} from '../src/domain.js';
 import {buildFurnitureParts} from '../src/furniture-models.js';
 const memory = () => {const data=new Map();return {getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value)};};
@@ -37,4 +38,14 @@ test('migration v1, sections historiques, données invalides et stockage refusé
 });
 test('recherche accentuée et couleurs stables',()=>{
   assert.equal(normalize(' Été D1 '),'ete d1');const section=sectionOptions('Sacs femmes')[0];assert.equal(sectionColor(section,'Sacs femmes'),sectionColor(section,'Sacs femmes'));
+});
+
+test('création de sessions et aperçu sur une adresse HTTP sans randomUUID',()=>{
+  const original=Object.getOwnPropertyDescriptor(globalThis,'crypto');
+  try{
+    Object.defineProperty(globalThis,'crypto',{configurable:true,value:{getRandomValues:array=>randomFillSync(array)}});
+    const ids=new Set(Array.from({length:64},()=>newProject().id));assert.equal(ids.size,64);
+    for(const id of ids)assert.match(id,/^dep-[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
+    assert(validDoc(createDemo()));
+  }finally{Object.defineProperty(globalThis,'crypto',original);}
 });

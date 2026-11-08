@@ -2,7 +2,7 @@ import React, {useEffect, useRef} from 'react';
 import {catalogById, sectionColor, placeItem} from './domain.js';
 import {renderFurniture} from './renderer.js';
 
-export function PlanCanvas({project,view='3',selected,pending,snap=true,step=1,onSelect=()=>{},onPlace=()=>{},onMove=()=>{},onError=()=>{},interactive=true}) {
+export function PlanCanvas({project,view='3',selected,pending,snap=true,step=1,onSelect=()=>{},onPlace=()=>{},onMove=()=>{},onError=()=>{},interactive=true,orbitOnly=false}) {
   const ref = useRef(null), camera = useRef({yaw:-.65,zoom:1}), gesture = useRef(null), latest = useRef(null);
   latest.current = {project,view,selected,pending,snap,step,onSelect,onPlace,onMove,onError};
   const engine = useRef({});
@@ -44,7 +44,7 @@ export function PlanCanvas({project,view='3',selected,pending,snap=true,step=1,o
     const [x,y]=point(event),world=engine.current.ground?.(x,y);if(!world)return;
     if(pending){if(Math.abs(world[0])<=project.width/2&&Math.abs(world[1])<=project.depth/2)onPlace(...world);return;}
     const inside=(points)=>{let hit=false;for(let i=0,j=points.length-1;i<points.length;j=i++){const a=points[i],b=points[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit;}return hit;};
-    const hit=[...(engine.current.polygons||[])].reverse().find(p=>inside(p.corners)||Math.hypot(x-p.center[0],y-p.center[1])<20);
+    const hit=!orbitOnly&&[...(engine.current.polygons||[])].reverse().find(p=>inside(p.corners)||Math.hypot(x-p.center[0],y-p.center[1])<20);
     if(hit){const item=project.items.find(item=>item.id===hit.id);onSelect(hit.id);gesture.current={kind:'move',item,dx:item.x-world[0],dz:item.z-world[1],start:[x,y]};}
     else gesture.current={kind:'orbit',x,yaw:camera.current.yaw};
     ref.current.setPointerCapture(event.pointerId);

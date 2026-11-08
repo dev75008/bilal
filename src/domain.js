@@ -6,7 +6,13 @@ export {catalog, departments};
 export const catalogById = Object.fromEntries(catalog.map(entry => [entry.id, entry]));
 export const colors = ['#72967a','#bcaa84','#a0b4c0','#b792a3','#a1a175','#85a4a2','#b88d71','#9a99b7','#99af77','#81a4bb','#c1a273','#ab8c96','#7f9e7c','#a8b391','#8fabb0','#b5a9bf','#c0ac9a','#8fb0a1','#af9d7d','#9bafbc'];
 const legacy = {'Département 04':['04 034 — Robes'], 'Sacs femmes':['Cross body bags','Tote bags','Backpacks'], 'Chaussures femmes':['07 002 — Heels.','Baskets','Bottes','Chaussures plates']};
-export const uid = () => 'dep-' + crypto.randomUUID();
+export function uid() {
+  if(typeof globalThis.crypto.randomUUID==='function')return 'dep-'+globalThis.crypto.randomUUID();
+  // getRandomValues also works when a public host is opened over HTTP.
+  const bytes=globalThis.crypto.getRandomValues(new Uint8Array(16));bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+  const hex=Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('');
+  return 'dep-'+[hex.slice(0,8),hex.slice(8,12),hex.slice(12,16),hex.slice(16,20),hex.slice(20)].join('-');
+}
 export const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr').trim();
 export const knownFootage = item => Number.isFinite(item.footageOverride) || Number.isFinite(catalogById[item.type]?.footage) || Number.isFinite(catalogById[item.type]?.perMetre);
 export const feet = item => Number.isFinite(item.footageOverride) ? item.footageOverride : catalogById[item.type]?.perMetre ? Math.round(item.l * catalogById[item.type].perMetre * 10) / 10 : catalogById[item.type]?.footage ?? 0;

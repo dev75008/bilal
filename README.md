@@ -4,6 +4,8 @@ Application React autonome pour concevoir des implantations commerciales, placer
 
 **Application : [dev75008.github.io/bilal](https://dev75008.github.io/bilal/)**
 
+La charte graphique est documentée dans [DESIGN.md](DESIGN.md) : palette cyan et anthracite, IBM Plex Sans hébergée localement, composants et états, navigation et règles de mouvement. [PRODUCT.md](PRODUCT.md) décrit les usages et les contraintes conservées.
+
 ## Publication sur GitHub Pages
 
 Chaque mise à jour de la branche `main` lance le workflow `.github/workflows/pages.yml` : installation des dépendances, tests, compilation React puis publication du dossier `dist/`. Le déploiement peut aussi être relancé depuis l’onglet Actions.
@@ -55,6 +57,7 @@ Les données restent dans le navigateur, à l’adresse du site. Elles ne sont p
 ## Organisation
 
 - `src/App.jsx` : interface et état React des sessions.
+- `src/Home.jsx`, `src/Icon.jsx` : accueil avec aperçu manipulable et famille d’icônes.
 - `src/PlanCanvas.jsx` : canevas React et interactions du plan.
 - `src/domain.js` : validation, import, migration, placement et footage.
 - `src/catalog.js`, `departments.js`, `demo.js` : données fournies.

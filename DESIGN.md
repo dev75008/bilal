@@ -181,3 +181,7 @@ Les tests vérifient les parcours React, l’aide, la protection des raccourcis 
 Références : https://www.apple.com/fr/ et https://www.primark.com/fr-fr. L’accueil privilégie les surfaces blanches, une introduction courte, l’espace entre les blocs et un véritable aperçu du plan. Le cyan Primark reste la couleur des actions principales. Pas de copie de visuels ni de police propriétaire Apple. L’éditeur conserve une densité adaptée au travail.
 
 La page d’accès reprend cette palette. Le mot de passe et son empreinte restent exclusivement dans les secrets du serveur.
+
+## Portail GitHub Pages
+
+Le portail de déverrouillage reprend le cyan Primark #00B6D1, le fond #F5F5F7 et le texte #152D35. Un seul champ de mot de passe, un état de traitement et un retour d’erreur explicite précèdent l’atelier. Le déverrouillage ouvre le logiciel sur la même adresse ; la commande « Verrouiller » revient au portail. Aucun détail cryptographique n’est affiché dans le parcours de connexion.

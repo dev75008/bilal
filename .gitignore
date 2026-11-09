@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .protected-client/
+.pages-app/
 pages/
 .openai/
 .taste-skill/

@@ -27,8 +27,14 @@ jobs:
         run: npm ci
       - name: Vérifier les fonctions et le parcours React
         run: npm test
-      - name: Compiler l’application complète pour GitHub Pages
+      - name: Compiler et chiffrer l’application pour GitHub Pages
         run: npm run build:pages
+        env:
+          PAGES_ACCESS_PASSWORD: ${{ secrets.PAGES_ACCESS_PASSWORD }}
+      - name: Vérifier le paquet chiffré et le démarrage de React
+        run: node --experimental-vm-modules scripts/verify-encrypted-pages.mjs
+        env:
+          PAGES_ACCESS_PASSWORD: ${{ secrets.PAGES_ACCESS_PASSWORD }}
       - name: Configurer GitHub Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - name: Préparer les fichiers à publier

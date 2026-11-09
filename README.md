@@ -1,6 +1,6 @@
 # Atelier Footage — React
 
-Application React autonome pour concevoir des implantations commerciales, placer des mobiliers en 2D/3D et calculer le footage par section. La version principale est publiée intégralement sur GitHub Pages et accessible sans compte ni mot de passe. Le code ne dépend d’aucune API OpenAI.
+Application React autonome pour concevoir des implantations commerciales, placer des mobiliers en 2D/3D et calculer le footage par section. La version principale est hébergée intégralement sur GitHub Pages. Une page de mot de passe déverrouille une copie chiffrée de l’application dans le navigateur, sans serveur ni redirection. Le code ne dépend d’aucune API OpenAI.
 
 **Application : [footplan.duckdns.org](http://footplan.duckdns.org/)**
 
@@ -10,7 +10,7 @@ La charte graphique est documentée dans [DESIGN.md](DESIGN.md) : palette cyan e
 
 ## Publication sur GitHub Pages
 
-Chaque mise à jour de la branche `main` lance le workflow `.github/workflows/pages.yml` : installation des dépendances, tests, compilation React avec `npm run build:pages`, puis publication de l’application complète depuis `dist/`. Aucune page de transition ni redirection vers Sites n’est incluse dans cette version. Le déploiement peut aussi être relancé depuis l’onglet Actions.
+Chaque mise à jour de la branche `main` lance le workflow `.github/workflows/pages.yml` : installation des dépendances, tests, compilation React, intégration des ressources et chiffrement avec `npm run build:pages`, puis publication du portail et du paquet chiffré depuis `dist/`. Aucune page de transition ni redirection vers Sites n’est incluse dans cette version. Le déploiement peut aussi être relancé depuis l’onglet Actions.
 
 La configuration Vite utilise des adresses relatives pour que le site fonctionne sous `/bilal/` comme à la racine d’un autre hébergement. Dans les paramètres du dépôt, la source de GitHub Pages doit être « GitHub Actions ».
 
@@ -33,7 +33,7 @@ npm run build
 npm run preview
 ```
 
-`npm run build` et `npm run build:pages` produisent l’application statique complète dans `dist/`, publiée sur GitHub Pages. Cette version est publique : GitHub Pages n’exécute pas de contrôle de mot de passe côté serveur. `npm run build:protected` produit le Worker sécurisé ; `.openai/hosting.json` doit déclarer `d1: "DB"` et ne doit contenir aucune clé `static`. Le navigateur télécharge le JavaScript React compilé ; aucune installation n’est nécessaire pour les utilisateurs. Les sources du catalogue et les illustrations sont incluses, sans chargement depuis un CDN.
+`npm run build` produit une version de développement statique non protégée. `npm run build:pages` exige le secret privé `PAGES_ACCESS_PASSWORD` et génère dans `dist/` uniquement le portail de déverrouillage, le paquet chiffré et les licences. Il ne faut jamais remplacer la publication par le résultat de `npm run build`. Le build échoue si le secret manque. `npm run build:protected` produit le Worker sécurisé ; `.openai/hosting.json` doit déclarer `d1: "DB"` et ne doit contenir aucune clé `static`. Le navigateur télécharge le JavaScript React compilé ; aucune installation n’est nécessaire pour les utilisateurs. Les sources du catalogue et les illustrations sont incluses, sans chargement depuis un CDN.
 
 ## Fonctions
 
@@ -94,3 +94,13 @@ La session signée expire après huit heures. Cookie `__Host-`, `Secure`, `HttpO
 La variante protégée n’est pas utilisée par GitHub Pages. Les imports et exports restent disponibles pour transférer des projets entre les adresses. Les sources GitHub restent publiques, les secrets de la variante protégée restent séparés.
 
 Le profil scrypt utilise environ 32 Mio par dérivation et fait partie des profils recommandés par [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt). Le pepper est conservé séparément du vérificateur dans les secrets du serveur ; il ne se trouve ni dans le JSON du vérificateur ni dans les fichiers clients. La comparaison du HMAC utilise WebCrypto. Les anciens vérificateurs PBKDF2 et les paramètres scrypt non autorisés sont refusés. Les connexions sont limitées à une dérivation simultanée par isolate pour borner la mémoire, en complément des quotas D1. Les paramètres sont vérifiés dans les tests contre scrypt et HMAC natifs de Node.js. Un mot de passe court reste facile à deviner en ligne : préférer une phrase de passe longue et unique.
+
+## Mot de passe sur GitHub Pages
+
+Le workflow utilise le secret GitHub Actions `PAGES_ACCESS_PASSWORD`, configuré dans les paramètres du dépôt, exclusivement au moment de la compilation. Ne pas stocker sa valeur dans un fichier, une variable VITE_, le code ou les logs. Modifier ce secret puis relancer le workflow change le mot de passe de la prochaine publication.
+
+Le contenu complet (React, visite 3D, styles, polices et images optimisées) est intégré en un fichier HTML, compressé puis chiffré par AES-256-GCM. La clé est dérivée par scrypt N=32768, r=8, p=3 (environ 32 Mio). Chaque compilation génère un sel aléatoire de 16 octets et un IV aléatoire de 12 octets. L’en-tête est authentifié avec le contenu. Aucun mot de passe, hash du mot de passe, pepper ou fichier applicatif en clair n’est publié par ce build.
+
+Après saisie correcte, le navigateur déchiffre l’application dans une iframe srcdoc sur la même origine : les projets existants dans localStorage restent disponibles. Le mot de passe et la clé ne sont pas conservés dans les cookies, localStorage ou sessionStorage. Recharger la page ou utiliser « Verrouiller » redemande le mot de passe. Une politique CSP autorise uniquement les scripts locaux du portail et l’empreinte du script déchiffré ; les soumissions de formulaire natives sont interdites pour éviter d’envoyer le mot de passe au serveur statique.
+
+Cette protection chiffre le contenu publié ; elle n’est pas une authentification serveur. Le paquet permet des essais hors ligne : un code de cinq chiffres reste faible et une phrase de passe longue est recommandée. Les sources du dépôt GitHub restent publiques. Les données des projets restent locales à l’appareil ; pour les transférer entre les anciens hébergements, utiliser Exporter puis Importer. Les paquets déchiffrés déjà téléchargés ne peuvent pas être révoqués à distance.

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#00b6d1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' __APP_SCRIPT_HASHES__; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="referrer" content="same-origin">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <title>Accès privé · Atelier Footage</title>
+</head>
+<body>
+  <div id="access-page">
+    <header><span class="brand">PRIMARK</span><span>Atelier Footage</span></header>
+    <main>
+      <div class="lock-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg></div>
+      <h1>Votre atelier.<br>Un accès privé.</h1>
+      <p>Saisissez votre mot de passe pour ouvrir votre espace d’implantation.</p>
+      <form id="unlock-form" method="post">
+        <label for="password">Mot de passe</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256" aria-describedby="feedback">
+        <button id="unlock-button" type="submit" disabled>Ouvrir l’atelier</button>
+        <p id="feedback" role="status" aria-live="polite"></p>
+      </form>
+      <p class="privacy">Vos projets restent sur cet appareil.</p>
+      <noscript>Activez JavaScript pour déverrouiller l’application.</noscript>
+    </main>
+  </div>
+  <script type="module" src="./unlock.js"></script>
+</body>
+</html>

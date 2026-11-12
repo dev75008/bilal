@@ -30,4 +30,5 @@ form.addEventListener('submit',async event=>{
   }catch(error){message(error.message==='password'?'Mot de passe incorrect. Réessayez.':'L’atelier ne peut pas être chargé. Vérifiez votre connexion, puis rechargez la page.',true);input.focus();}
   finally{password='';busy=false;button.disabled=false;input.disabled=false;form.removeAttribute('aria-busy');if(!frame)input.focus();}
 });
-button.disabled=false;
+input.addEventListener('input',()=>{if(feedback.dataset.error==='true')message('');});
+button.disabled=false;input.focus();

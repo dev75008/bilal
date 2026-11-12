@@ -2,9 +2,11 @@
 
 Application React autonome pour concevoir des implantations commerciales, placer des mobiliers en 2D/3D et calculer le footage par section. La version principale est hébergée intégralement sur GitHub Pages. Une page de mot de passe déverrouille une copie chiffrée de l’application dans le navigateur, sans serveur ni redirection. Le code ne dépend d’aucune API OpenAI.
 
-**Application : [footplan.duckdns.org](http://footplan.duckdns.org/)**
+**Application : [dev75008.github.io/bilal](https://dev75008.github.io/bilal/)**
 
-Dépôt : [dev75008/bilal](https://github.com/dev75008/bilal). Adresse GitHub Pages : [dev75008.github.io/bilal](https://dev75008.github.io/bilal/), associée au domaine `footplan.duckdns.org`.
+Dépôt : [dev75008/bilal](https://github.com/dev75008/bilal). L’adresse publiée est `https://dev75008.github.io/bilal/`. Aucun domaine personnalisé n’est configuré : un domaine dont le DNS ne pointe pas vers GitHub Pages coupe le site, car GitHub redirige alors chaque visite vers ce domaine.
+
+L’ancien domaine `footplan.duckdns.org` ne répond plus. Son enregistrement A public vaut `192.169.69.25`, un sinkhole anti-abus (`sinkhole.hyas.com`), et non une adresse GitHub Pages. Le domaine ne peut donc pas être rétabli depuis ce dépôt : il faut corriger l’enregistrement chez DuckDNS (IP GitHub Pages ou CNAME vers `dev75008.github.io`), puis redéclarer le domaine dans les paramètres Pages. Ne redéclarer le domaine qu’après un DNS correct, sinon le site `github.io` redirigera de nouveau vers une adresse morte.
 
 La charte graphique est documentée dans [DESIGN.md](DESIGN.md) : palette cyan et anthracite, IBM Plex Sans hébergée localement, composants et états, navigation et règles de mouvement. [PRODUCT.md](PRODUCT.md) décrit les usages et les contraintes conservées.
 
@@ -13,6 +15,8 @@ La charte graphique est documentée dans [DESIGN.md](DESIGN.md) : palette cyan e
 Chaque mise à jour de la branche `main` lance le workflow `.github/workflows/pages.yml` : installation des dépendances, tests, compilation React, intégration des ressources et chiffrement avec `npm run build:pages`, puis publication du portail et du paquet chiffré depuis `dist/`. Aucune page de transition ni redirection vers Sites n’est incluse dans cette version. Le déploiement peut aussi être relancé depuis l’onglet Actions.
 
 La configuration Vite utilise des adresses relatives pour que le site fonctionne sous `/bilal/` comme à la racine d’un autre hébergement. Dans les paramètres du dépôt, la source de GitHub Pages doit être « GitHub Actions ».
+
+Après chaque publication, le job `verifier` exécute `node scripts/check-deployment.mjs <url>` : le portail doit répondre 200, contenir le formulaire de mot de passe, ne pas contenir l’application en clair, et servir le paquet `application-*.bin`. Le même contrôle tourne chaque jour à 05:17 UTC dans le job `surveillance` sur `vars.PRODUCTION_URL` (valeur par défaut `https://dev75008.github.io/bilal/`). Une panne de domaine ou de DNS fait donc échouer le workflow au lieu de laisser un site muet.
 
 Les projets sauvegardés sur une autre adresse ne sont pas transférés automatiquement : exportez-les depuis l’ancien site, puis importez le fichier sur cette nouvelle adresse.
 
